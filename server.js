@@ -4,6 +4,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const weatherData = require('./data/weather.json');
 
 //create instance of an Express server
 const app = express();
@@ -20,6 +21,30 @@ app.get('/', (request, response) => {
   response.send('testing, testing');
 });
 
+
+//create endpoint that contains lat, lon, searchQuery
+
+app.get('/weather', (request, response) => {
+  //have to use exact names in order to destructure
+  const { lat, lon, searchQuery } = request.query;
+  const forecast = new Forecast(searchQuery);
+  const forecastArray = forecast.getForecast();
+  response.status(200).send(forecastArray);
+});
+
+class Forecast {
+  constructor(cityWeSearchedFor) {
+    let { data } = weatherData.find(city => city.city_name.toLowerCase() === cityWeSearchedFor.toLowerCase());
+    this.data = data;
+  }
+
+  getForecast() {
+    return this.data.map(day => ({
+      date: day.datetime,
+      description: day.weather.description
+    }));
+  }
+}
 //this line of code needs to be the very last line of this file.
 //tell app to listen to which port we're serving on.
 //using this console log because we want to know which port we're serving on. If using alternative port, something is wrong with my .env file or otherwise.
