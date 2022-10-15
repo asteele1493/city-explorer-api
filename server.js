@@ -3,34 +3,36 @@
 //requires are similar to imports
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 require('dotenv').config();
-const weatherData = require('./data/weather.json');
-const { Next } = require('react-bootstrap/esm/PageItem');
 
-//create instance of an Express server
+// const weatherResponse = await axios.get(url);
+// const { Next } = require('react-bootstrap/esm/PageItem');
+
+//Installs express server
 const app = express();
 
-//middleware: tells express app to use cors
+//Middleware
 app.use(cors());
 
-//set out PORT variable to tell our express app where to serve our server
-//PORT is not bananas. Must be named exactly this bc Heroku looks for a variable named PORT.
+//Denotes port; pulls from .env file; gives backup
 const PORT = process.env.PORT || 3002;
 
-//define an endpoint. define the 'home route' endpoint.
+
+//Denote home route to ensure proper routing
 app.get('/', (request, response) => {
   response.send('testing, testing');
 });
 
-
-//create endpoint that contains lat, lon, searchQuery
-
-app.get('/weather', (request, response) => {
+//Denote weather route
+app.get('/weather', async (request, response, next) => {
   try {
-    //have to use exact names in order to destructure
-    const { lat, lon, searchQuery } = request.query;
-    const forecast = new Forecast(searchQuery);
-    const forecastArray = forecast.getForecast();
+    const { lat, lon } = request.query;
+    const url = `https://api.weatherbit.io/v2.0/forecast/daily?key=${process.env.WEATHER_API_KEY}&days=7&lat=${lat}&lon=${lon}`;
+    const weatherResponse = await axios.get(url);
+    const forecastArray = weatherResponse.data.data.map(day => new Forecast(day));
+    // const forecastArray = forecast.getForecast();
+    console.log(weatherResponse.data);
     response.status(200).send(forecastArray);
   } catch (error) {
     next(error.message);
@@ -38,27 +40,44 @@ app.get('/weather', (request, response) => {
 });
 
 class Forecast {
-  constructor(cityWeSearchedFor) {
-    let { data } = weatherData.find(city => city.city_name.toLowerCase() === cityWeSearchedFor.toLowerCase());
-    this.data = data;
+  constructor(day) {
+    this.date = day.datetime;
+    this.description = day.weather.description;
   }
+}
 
-  getForecast() {
-    return this.data.map(day => ({
-      date: day.datetime,
-      description: day.weather.description
-    }));
+app.get('/movies', async (request, response, next) => {
+  try {
+    const { searchQuery } = request.query.searchQuery;
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIES_API_KEY}&query=${searchQuery}`;
+    const movieResponse = await axios.get(url);
+    const moviesArr = movieResponse.data.results.map(movie => new Movie(movie));
+    // const forecastArray = forecast.getForecast();
+    console.log(movieResponse.data);
+    response.status(200).send(moviesArr);
+  } catch (error) {
+    next(error.message);
+  }
+});
+
+class Movie {
+  constructor(movie) {
+    this.title = movie.title;
+    this.overview = movie.overview;
+    this.average_votes = movie.vote_average;
+    this.total_votes = movie.vote_count;
+    this.image_url = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+    this.popularity = movie.popularity;
+    this.released_on = movie.release_date;
   }
 }
 
 app.use((error, request, response, next) => {
   console.log(error);
   response.status(500).send(error);
-})
-//this line of code needs to be the very last line of this file.
-//tell app to listen to which port we're serving on.
-//using this console log because we want to know which port we're serving on. If using alternative port, something is wrong with my .env file or otherwise.
-app.listen(PORT,() => console.log(`listening on PORT ${PORT}`));
+});
+
+//Must be the last line in the code when building out a server.
+app.listen(PORT, () => console.log(`listening on PORT ${PORT}`));
 
 
-//Anytime you console log in the server, it will console log in the terminal, not in the browser.
