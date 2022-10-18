@@ -41,6 +41,8 @@ app.get('/weather', async (request, response, next) => {
 class Forecast {
   constructor(day) {
     this.date = day.datetime;
+    this.lowTemp = day.low_temp + ' °C';
+    this.highTemp = day.high_temp + ' °C';
     this.description = day.weather.description;
   }
 }
@@ -48,7 +50,7 @@ class Forecast {
 app.get('/movies', async (request, response, next) => {
   try {
     const { searchQuery } = request.query.searchQuery;
-    const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIES_API_KEY}&query=${searchQuery}`;
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIES_API_KEY}&query=${searchQuery}&page=1`;
     const movieResponse = await axios.get(url);
     console.log(movieResponse.data);
     const moviesArr = movieResponse.data.results.map(movie => new Movie(movie));
