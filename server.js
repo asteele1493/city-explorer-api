@@ -30,9 +30,8 @@ app.get('/weather', async (request, response, next) => {
     const { lat, lon } = request.query;
     const url = `https://api.weatherbit.io/v2.0/forecast/daily?key=${process.env.WEATHER_API_KEY}&days=7&lat=${lat}&lon=${lon}`;
     const weatherResponse = await axios.get(url);
-    const forecastArray = weatherResponse.data.data.map(day => new Forecast(day));
-    // const forecastArray = forecast.getForecast();
     console.log(weatherResponse.data);
+    const forecastArray = weatherResponse.data.data.map(day => new Forecast(day));
     response.status(200).send(forecastArray);
   } catch (error) {
     next(error.message);
@@ -51,9 +50,8 @@ app.get('/movies', async (request, response, next) => {
     const { searchQuery } = request.query.searchQuery;
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIES_API_KEY}&query=${searchQuery}`;
     const movieResponse = await axios.get(url);
-    const moviesArr = movieResponse.data.results.map(movie => new Movie(movie));
-    // const forecastArray = forecast.getForecast();
     console.log(movieResponse.data);
+    const moviesArr = movieResponse.data.results.map(movie => new Movie(movie));
     response.status(200).send(moviesArr);
   } catch (error) {
     next(error.message);
